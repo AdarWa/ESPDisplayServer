@@ -4,6 +4,7 @@ from enum import Enum
 class RequestType(str, Enum):
     SUBSCRIBE = "subscribe"
     CLOCK_SYNC = "clock_sync"
+    SUBSCRIBE_REPLY = "subscribe_reply"
     
 
 class MessageBase(BaseModel):
