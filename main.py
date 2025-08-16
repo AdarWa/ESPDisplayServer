@@ -2,7 +2,7 @@ import logging
 import time
 
 from protocol.mqtt import MQTT
-from protocol.rpc_handler import RPCHandler
+from rpc.rpc_handler import RPCHandler
 from protocol.session_handler import SessionHandler
 logging.basicConfig(
     level=logging.DEBUG,  # Minimum log level
@@ -12,7 +12,7 @@ logging.basicConfig(
 
 def main():
     logging.info("Starting ESP Display Server")
-    client = MQTT("mosquitto", 1883)
+    client = MQTT("192.168.1.32", 1883, "admin", "PASSWORD")
     logging.info("Started MQTT client")
     sessions = SessionHandler(client)
     RPCHandler().init(client)

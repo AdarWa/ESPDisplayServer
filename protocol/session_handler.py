@@ -2,7 +2,7 @@ import logging
 from protocol.messages.MessageBase import RequestType
 from protocol.mqtt import MQTT
 from protocol.messages.SubscribeMessage import SubscribeMessage, SubscribeReply
-from protocol.rpc_handler import RPCHandler
+from rpc.rpc_handler import RPCHandler
 from storage.models.Sessions import Session
 from storage.session_manager import SessionManager
 
