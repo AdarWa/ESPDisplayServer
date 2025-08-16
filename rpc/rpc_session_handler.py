@@ -29,7 +29,12 @@ class RPCSessionHandler:
 
         # server subscribes to client topic (incoming requests and responses)
         self.client.subscribe(f"espdisplay/{uuid}/client", self._on_message)
-        logging.debug(self.call("add", {"a": 1, "b": 2}))
+        # logging.debug(self.call("add", {"a": 1, "b": 2}))
+        def add(params: dict):
+            a = params.get("a", 0)
+            b = params.get("b", 0)
+            return a+b
+        self.register_method("add", add)
 
     # -------- outgoing call --------
     def call(self, method: str, params: Any, timeout: Optional[float] = None) -> Any:
@@ -74,7 +79,7 @@ class RPCSessionHandler:
                 resp = make_error("Internal error", id=req_id, code=-32603, data=str(e))
 
         # reply on server topic (device is listening)
-        self.client.publish(f"espdisplay/{self.uuid}/server", serialize(resp))
+        self.client.publish(f"espdisplay/{self.uuid}/server", resp)
 
     # -------- handle incoming messages --------
     def _on_message(self, payload: Any) -> None:
