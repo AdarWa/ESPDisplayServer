@@ -1,3 +1,4 @@
+import yaml
 from pathlib import Path
 from typing import Type
 from pydantic import BaseModel
@@ -24,4 +25,15 @@ class StorageManager:
     def exists(self, file_name: str) -> bool:
         return (self.path / file_name).exists()
     
+    # YAML support
+    def write_file_yaml(self, file_name: str, model: BaseModel, mode="w"):
+        data = model.model_dump()  # get dict representation
+        with open(self.path / file_name, mode) as f:
+            yaml.safe_dump(data, f)
+
+    def read_file_yaml(self, file_name: str, model_type: Type[BaseModel], mode="r"):
+        with open(self.path / file_name, mode) as f:
+            data = yaml.safe_load(f)
+        return model_type.model_validate(data)
+
 storage = StorageManager()
