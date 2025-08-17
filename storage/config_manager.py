@@ -1,5 +1,5 @@
 from pathlib import Path
-from storage.models.Config import Config
+from storage.models.Config import Config, get_default_config
 from storage.storage_manager import storage
 
 from utils.utils import singleton
@@ -18,7 +18,7 @@ class ConfigManager:
         if storage.exists(path):
             return storage.read_file_yaml(path, Config)
         else:
-            storage.write_file_yaml(path, Config(screens=[]))
+            storage.write_file_yaml(path, get_default_config())
             return storage.read_file_yaml(path, Config)
 
     def write_config(self, uuid: int, config: Config):

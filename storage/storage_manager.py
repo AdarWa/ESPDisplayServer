@@ -28,11 +28,15 @@ class StorageManager:
     # YAML support
     def write_file_yaml(self, file_name: str, model: BaseModel, mode="w"):
         data = model.model_dump()  # get dict representation
-        with open(self.path / file_name, mode) as f:
+        full_path = self.path / file_name
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        with full_path.open(mode) as f:
             yaml.safe_dump(data, f)
 
     def read_file_yaml(self, file_name: str, model_type: Type[BaseModel], mode="r"):
-        with open(self.path / file_name, mode) as f:
+        full_path = self.path / file_name
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        with full_path.open(mode) as f:
             data = yaml.safe_load(f)
         return model_type.model_validate(data)
 

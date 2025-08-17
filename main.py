@@ -1,3 +1,5 @@
+ENV_FILE = "local.env"
+
 import logging
 import os
 import time
@@ -5,9 +7,12 @@ from dotenv import load_dotenv
 from protocol.mqtt import MQTT
 from rpc.rpc_handler import RPCHandler
 from protocol.session_handler import SessionHandler
+from storage.config_manager import ConfigManager
 
-load_dotenv()
+load_dotenv(ENV_FILE)
 
+MQTT_SERVER = os.environ.get("MQTT_SERVER", "localhost")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 MQTT_USER = os.environ.get("MQTT_USER", "")
 MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "")
 
@@ -19,10 +24,11 @@ logging.basicConfig(
 
 def main():
     logging.info("Starting ESP Display Server")
-    client = MQTT("192.168.1.32", 1883, MQTT_USER, MQTT_PASSWORD)
+    client = MQTT(MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD)
     logging.info("Started MQTT client")
     SessionHandler(client)
     RPCHandler().init(client)
+    ConfigManager().init()
     RPCHandler().update_subscriptions()
     logging.info("Started Session Handler")
     try:
