@@ -4,10 +4,9 @@ import logging
 from pydantic import BaseModel, ValidationError
 
 class MQTT:
-    def __init__(self, address: str, port = 1883, username="", password="", timeout=5):
+    def __init__(self, address: str, port = 1883, username=None, password=None, timeout=5):
         self.client = mqtt.Client()
-        if username and password:
-            self.client.username_pw_set(username, password)
+        self.client.username_pw_set(username, password)
         self.client.on_message = self.on_msg
         self.subscribers = {}
         self.client.connect(address, port, 60)
