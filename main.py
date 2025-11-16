@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 from protocol.mqtt import MQTT
 from rpc.rpc_handler import RPCHandler
 from protocol.session_handler import SessionHandler
-from storage.config_manager import ConfigManager
-from storage.state_manager import StateManager
 
 load_dotenv(ENV_FILE)
 
@@ -29,8 +27,6 @@ def main():
     logging.info("Started MQTT client")
     SessionHandler(client)
     RPCHandler().init(client)
-    ConfigManager().init()
-    StateManager().init()
     RPCHandler().update_subscriptions()
     logging.info("Started Session Handler")
     try:

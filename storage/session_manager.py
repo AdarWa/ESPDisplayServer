@@ -1,38 +1,43 @@
-from storage.storage_manager import storage
-from storage.models.Sessions import Session, Sessions
-from typing import cast
-
+import logging
+from typing import List
 from utils.utils import singleton
+from storage.storage_manager import storage, Storage
+
 
 @singleton
 class SessionManager:
-    def init(self, sessions_file = "sessions.json", load=True) -> None:
-        self.sessions = Sessions()
+    def init(self, sessions_file: str = "sessions.json", store: Storage | None = None) -> None:
         self.sessions_file = sessions_file
-        if load:
-            self.load_sessions()
+        self.storage = store or storage
+        self.sessions: List[int] = []
+        self._load_sessions()
 
-    def get_sessions(self) -> Sessions:
-        return cast(Sessions,self.sessions)
+    def _persist(self) -> None:
+        try:
+            self.storage.write_json(self.sessions_file, {"sessions": self.sessions})
+        except PermissionError as exc:
+            logging.warning(f"Failed to persist sessions to {self.sessions_file}: {exc}")
 
-    def load_sessions(self) -> None:
-        if not storage.exists(self.sessions_file):
-            self.write_sessions(Sessions())
-        self.sessions = storage.read_file(self.sessions_file, Sessions)
-    
-    def write_sessions(self, sessions: Sessions | None = None) -> None:
-        if not sessions:
-            sessions = cast(Sessions, self.sessions)
-        assert sessions is not None
-        storage.write_file(self.sessions_file, sessions)
+    def _load_sessions(self) -> None:
+        data = self.storage.read_json(self.sessions_file, default={"sessions": []})
+        raw_sessions = data.get("sessions", [])
+        cleaned: List[int] = []
+        for entry in raw_sessions:
+            if isinstance(entry, dict) and "uuid" in entry:
+                cleaned.append(int(entry["uuid"]))
+            elif isinstance(entry, int):
+                cleaned.append(entry)
+        self.sessions = cleaned
+        if raw_sessions != cleaned:
+            self._persist()
 
-    def add_session(self, session: Session, write=True) -> None:
-        cast(Sessions,self.sessions).sessions.append(session)
-        if write:
-            self.write_sessions()
-    
+    def list_sessions(self) -> List[int]:
+        return list(self.sessions)
+
+    def add_session(self, uuid: int) -> None:
+        if uuid not in self.sessions:
+            self.sessions.append(uuid)
+            self._persist()
+
     def get_free_session_id(self) -> int:
-        return max([session.uuid for session in cast(Sessions,self.sessions).sessions]+[-1])+1
-
-
-
+        return (max(self.sessions) + 1) if self.sessions else 0

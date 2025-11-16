@@ -1,43 +1,57 @@
-import yaml
+import json
 from pathlib import Path
-from typing import Type
-from pydantic import BaseModel
+from typing import Any, Optional
 
-class StorageManager:
-    def __init__(self, path: Path = Path("./esp_storage")):
-        self.path = path
-        path.mkdir(exist_ok=True)
-    
-    def write_file(self, file_name: str, model: BaseModel, mode="w"):
-        self.write_file_str(file_name, model.model_dump_json(), mode)
 
-    def write_file_str(self, file_name: str, data: str, mode="w"):
-        with open(self.path / file_name, mode) as f:
+class Storage:
+    """
+    Lightweight storage helper for reading/writing JSON or text files under a
+    configurable root directory. Namespaces can be created for easy separation
+    of concerns (e.g. sessions/, configs/).
+    """
+
+    def __init__(self, root: Path = Path("./esp_storage")):
+        self.root = root
+        self.root.mkdir(parents=True, exist_ok=True)
+
+    def namespace(self, name: str) -> "Storage":
+        """Return a new Storage rooted at a child directory."""
+        return Storage(self.root / name)
+
+    def _resolve(self, filename: str | Path) -> Path:
+        path = self.root / Path(filename)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def write_json(self, filename: str | Path, data: Any) -> None:
+        path = self._resolve(filename)
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+    def read_json(self, filename: str | Path, default: Optional[Any] = None) -> Any:
+        path = self._resolve(filename)
+        if not path.exists():
+            if default is not None:
+                self.write_json(filename, default)
+                return default
+            raise FileNotFoundError(f"Missing file: {path}")
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def write_text(self, filename: str | Path, data: str) -> None:
+        path = self._resolve(filename)
+        with path.open("w", encoding="utf-8") as f:
             f.write(data)
 
-    def read_file_str(self, file_name: str, mode="r"):
-        with open(self.path / file_name, mode) as f:
+    def read_text(self, filename: str | Path, default: Optional[str] = None) -> str:
+        path = self._resolve(filename)
+        if not path.exists():
+            if default is not None:
+                self.write_text(filename, default)
+                return default
+            raise FileNotFoundError(f"Missing file: {path}")
+        with path.open("r", encoding="utf-8") as f:
             return f.read()
-    
-    def read_file(self, file_name: str, model_type: Type[BaseModel], mode="r"):
-        return model_type.model_validate_json(self.read_file_str(file_name,mode))
-    
-    def exists(self, file_name: str) -> bool:
-        return (self.path / file_name).exists()
-    
-    # YAML support
-    def write_file_yaml(self, file_name: str, model: BaseModel, mode="w"):
-        data = model.model_dump()  # get dict representation
-        full_path = self.path / file_name
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        with full_path.open(mode) as f:
-            yaml.safe_dump(data, f)
 
-    def read_file_yaml(self, file_name: str, model_type: Type[BaseModel], mode="r"):
-        full_path = self.path / file_name
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        with full_path.open(mode) as f:
-            data = yaml.safe_load(f)
-        return model_type.model_validate(data)
 
-storage = StorageManager()
+storage = Storage()

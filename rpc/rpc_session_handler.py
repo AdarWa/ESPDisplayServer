@@ -5,10 +5,9 @@ from typing import Dict, Callable, Any, Optional
 
 from protocol.mqtt import MQTT
 from rpc.rpc_protocol import (
-    make_request, make_response, make_error, serialize, deserialize
+    make_request, make_response, make_error, deserialize
 )
-from rpc.rpc_models import JSONRPCRequest, JSONRPCResult, JSONRPCErrorResponse, JSONRPCMessage, JSONRPCException
-import rpc.handler_methods as handler_methods
+from rpc.rpc_models import JSONRPCRequest, JSONRPCResult, JSONRPCErrorResponse, JSONRPCMessage
 
 class RPCSessionHandler:
     """
@@ -32,7 +31,7 @@ class RPCSessionHandler:
         # server subscribes to client topic (incoming requests and responses)
         logging.debug(f"[RPC {self.uuid}] Subscribing to espdisplay/{uuid}/client")
         self.client.subscribe(f"espdisplay/{uuid}/client", self._on_message)
-        handler_methods.add_methods(self)
+        self.register_method("ping", self._ping)
         logging.debug(f"[RPC {self.uuid}] Registered default handler methods")
 
     # -------- outgoing call --------
@@ -105,11 +104,21 @@ class RPCSessionHandler:
             self._handle_request(msg.request)
         elif msg.result is not None:
             logging.debug(f"[RPC {self.uuid}] Message is a result for request {msg.result.id}")
-            self._pending_results[msg.result.id] = msg.result.result
-            self._pending_events[msg.result.id].set()
+            event = self._pending_events.get(msg.result.id)
+            if event:
+                self._pending_results[msg.result.id] = msg.result.result
+                event.set()
+            else:
+                logging.warning(f"[RPC {self.uuid}] Received result for unknown request id {msg.result.id}")
         elif msg.error is not None:
             logging.debug(f"[RPC {self.uuid}] Message is an error: {msg.error}")
-            raise JSONRPCException(msg.error.error)
+            err = msg.error
+            event = self._pending_events.get(err.id) if err.id else None
+            if event and err.id is not None:
+                self._pending_results[err.id] = {"error": err.error.model_dump()}
+                event.set()
+            else:
+                logging.error(f"[RPC {self.uuid}] Unhandled JSON-RPC error: {err.error}")
             
     def register_method(self, name: str, func: Callable[[Any, RPCSessionHandler], Any]) -> None:
         logging.debug(f"[RPC {self.uuid}] Registering method: {name}")
@@ -118,3 +127,8 @@ class RPCSessionHandler:
     def unregister_method(self, name: str) -> None:
         logging.debug(f"[RPC {self.uuid}] Unregistering method: {name}")
         self._methods.pop(name, None)
+
+    @staticmethod
+    def _ping(params: Any, handler: "RPCSessionHandler") -> Any:
+        """Simple health check method."""
+        return {"pong": params}

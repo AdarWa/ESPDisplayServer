@@ -13,8 +13,7 @@ class RPCHandler:
 
     def update_subscriptions(self):
         # make sure every session has a handler
-        for session in SessionManager().get_sessions().sessions:
-            uuid = session.uuid
+        for uuid in SessionManager().list_sessions():
             if not self.handler_exists(uuid):
                 handler = RPCSessionHandler(uuid, self.client, default_timeout=self.default_timeout)
                 self.handlers.append(handler)
@@ -27,6 +26,3 @@ class RPCHandler:
             if h.uuid == uuid:
                 return h
         raise ValueError(f"No RPC handler for uuid {uuid}")
-
-
-
