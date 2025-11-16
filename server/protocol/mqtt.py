@@ -8,7 +8,9 @@ from pydantic import BaseModel
 
 
 class MQTT:
-    def __init__(self, address: str, port=1883, username=None, password=None, timeout=5):
+    def __init__(
+        self, address: str, port=1883, username=None, password=None, timeout=5
+    ):
         self.client = mqtt.Client()
         self.client.username_pw_set(username, password)
         self.client.on_message = self.on_msg
@@ -18,7 +20,7 @@ class MQTT:
 
     def stop(self):
         self.client.loop_stop()
-    
+
     def on_msg(self, client, userdata, msg):
         logging.debug(f"Got message on topic {msg.topic}, {msg.payload}")
         if msg.topic not in self.subscribers:
@@ -31,13 +33,19 @@ class MQTT:
                 payload = json.loads(msg.payload.decode("utf-8"))
             callback(payload)
         except Exception as e:
-            logging.exception(f"Error in MQTT message callback for topic {msg.topic}: {e}")
-    
-    def subscribe(self, topic: str, callback: Callable[[Any], None], json_payload: bool = False):
-        logging.debug(f"Client subscribed on topic {topic} with json_payload={json_payload}")
+            logging.exception(
+                f"Error in MQTT message callback for topic {msg.topic}: {e}"
+            )
+
+    def subscribe(
+        self, topic: str, callback: Callable[[Any], None], json_payload: bool = False
+    ):
+        logging.debug(
+            f"Client subscribed on topic {topic} with json_payload={json_payload}"
+        )
         self.client.subscribe(topic)
         self.subscribers[topic] = (callback, json_payload)
-        
+
     def publish(self, topic: str, payload: Any):
         logging.debug(f"client published on topic {topic}")
         formatted = self._format_payload(payload)

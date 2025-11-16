@@ -6,7 +6,9 @@ from storage.storage_manager import storage, Storage
 
 @singleton
 class SessionManager:
-    def init(self, sessions_file: str = "sessions.json", store: Storage | None = None) -> None:
+    def init(
+        self, sessions_file: str = "sessions.json", store: Storage | None = None
+    ) -> None:
         self.sessions_file = sessions_file
         self.storage = store or storage
         self.sessions: List[int] = []
@@ -16,7 +18,9 @@ class SessionManager:
         try:
             self.storage.write_json(self.sessions_file, {"sessions": self.sessions})
         except PermissionError as exc:
-            logging.warning(f"Failed to persist sessions to {self.sessions_file}: {exc}")
+            logging.warning(
+                f"Failed to persist sessions to {self.sessions_file}: {exc}"
+            )
 
     def _load_sessions(self) -> None:
         data = self.storage.read_json(self.sessions_file, default={"sessions": []})

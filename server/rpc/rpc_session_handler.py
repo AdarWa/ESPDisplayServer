@@ -4,12 +4,11 @@ import threading
 from typing import Dict, Callable, Any, Optional
 
 from protocol.mqtt import MQTT
-from rpc.rpc_protocol import (
-    make_request, make_response, make_error, deserialize
-)
+from rpc.rpc_protocol import make_request, make_response, make_error, deserialize
 from rpc.rpc_models import JSONRPCRequest, JSONRPCMessage
 from utils.utils import rpc_functions
 import rpc.rpc_methods as _
+
 
 class RPCSessionHandler:
     """
@@ -35,32 +34,42 @@ class RPCSessionHandler:
         logging.debug(f"{self.logging_prefix}Subscribing to espdisplay/{uuid}/client")
         self.client.subscribe(f"espdisplay/{uuid}/client", self._on_message)
         self.register_method("ping", self._ping)
-        for key,func in rpc_functions.items():
+        for key, func in rpc_functions.items():
             self.register_method(key, func)
             logging.debug(f"{self.logging_prefix}Registed method {key}")
         logging.debug(f"{self.logging_prefix}Registered default handler methods")
 
     # -------- outgoing call --------
     def call(self, method: str, params: Any, timeout: Optional[float] = None) -> Any:
-        logging.debug(f"{self.logging_prefix}Making call: {method} with params: {params}")
+        logging.debug(
+            f"{self.logging_prefix}Making call: {method} with params: {params}"
+        )
         req = make_request(method, params)
         event = threading.Event()
         self._pending_events[req.id] = event
 
         # publish to server topic (device will receive)
-        logging.debug(f"{self.logging_prefix}Publishing request to espdisplay/{self.uuid}/server: {req}")
+        logging.debug(
+            f"{self.logging_prefix}Publishing request to espdisplay/{self.uuid}/server: {req}"
+        )
         self.client.publish(f"espdisplay/{self.uuid}/server", req)
 
         wait_for = timeout if timeout is not None else self.default_timeout
         if not event.wait(wait_for):
-            logging.debug(f"{self.logging_prefix}Timeout waiting for response to request {req.id}")
+            logging.debug(
+                f"{self.logging_prefix}Timeout waiting for response to request {req.id}"
+            )
             self._pending_events.pop(req.id, None)
             self._pending_results.pop(req.id, None)
-            raise TimeoutError(f"RPC call={method} in device={self.uuid} timed out after {wait_for} seconds")
+            raise TimeoutError(
+                f"RPC call={method} in device={self.uuid} timed out after {wait_for} seconds"
+            )
 
         result = self._pending_results.pop(req.id, None)
         self._pending_events.pop(req.id, None)
-        logging.debug(f"{self.logging_prefix}Received result for request {req.id}: {result}")
+        logging.debug(
+            f"{self.logging_prefix}Received result for request {req.id}: {result}"
+        )
 
         if isinstance(result, dict) and "error" in result:
             err = result["error"]
@@ -85,14 +94,18 @@ class RPCSessionHandler:
         else:
             try:
                 result = self._methods[method](params, self)
-                logging.debug(f"{self.logging_prefix}Method {method} returned: {result}")
+                logging.debug(
+                    f"{self.logging_prefix}Method {method} returned: {result}"
+                )
                 resp = make_response(result, id=req_id)
             except Exception as e:
                 logging.debug(f"{self.logging_prefix}Error in method {method}: {e}")
                 resp = make_error("Internal error", id=req_id, code=-32603, data=str(e))
 
         # reply on server topic (device is listening)
-        logging.debug(f"{self.logging_prefix}Publishing response to espdisplay/{self.uuid}/server: {resp}")
+        logging.debug(
+            f"{self.logging_prefix}Publishing response to espdisplay/{self.uuid}/server: {resp}"
+        )
         self.client.publish(f"espdisplay/{self.uuid}/server", resp)
 
     # -------- handle incoming messages --------
@@ -109,13 +122,17 @@ class RPCSessionHandler:
             logging.debug(f"{self.logging_prefix}Message is a request")
             self._handle_request(msg.request)
         elif msg.result is not None:
-            logging.debug(f"{self.logging_prefix}Message is a result for request {msg.result.id}")
+            logging.debug(
+                f"{self.logging_prefix}Message is a result for request {msg.result.id}"
+            )
             event = self._pending_events.get(msg.result.id)
             if event:
                 self._pending_results[msg.result.id] = msg.result.result
                 event.set()
             else:
-                logging.warning(f"{self.logging_prefix}Received result for unknown request id {msg.result.id}")
+                logging.warning(
+                    f"{self.logging_prefix}Received result for unknown request id {msg.result.id}"
+                )
         elif msg.error is not None:
             logging.debug(f"{self.logging_prefix}Message is an error: {msg.error}")
             err = msg.error
@@ -124,9 +141,13 @@ class RPCSessionHandler:
                 self._pending_results[err.id] = {"error": err.error.model_dump()}
                 event.set()
             else:
-                logging.error(f"{self.logging_prefix}Unhandled JSON-RPC error: {err.error}")
-            
-    def register_method(self, name: str, func: Callable[[Any, RPCSessionHandler], Any]) -> None:
+                logging.error(
+                    f"{self.logging_prefix}Unhandled JSON-RPC error: {err.error}"
+                )
+
+    def register_method(
+        self, name: str, func: Callable[[Any, RPCSessionHandler], Any]
+    ) -> None:
         logging.debug(f"{self.logging_prefix}Registering method: {name}")
         self._methods[name] = func
 

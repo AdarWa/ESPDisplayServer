@@ -13,8 +13,10 @@ class SessionHandler:
     def __init__(self, client: MQTT):
         SessionManager().init()
         self.client = client
-        self.client.subscribe("espdisplay/subscribe", self.on_subscribe, json_payload=True)
-    
+        self.client.subscribe(
+            "espdisplay/subscribe", self.on_subscribe, json_payload=True
+        )
+
     def on_subscribe(self, payload):
         if not isinstance(payload, dict):
             logging.warning("Subscribe payload was not JSON, ignoring")

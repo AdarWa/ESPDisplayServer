@@ -12,6 +12,7 @@ from protocol.mqtt import MQTT
 from rpc.rpc_protocol import make_error, make_request, make_response, deserialize
 from rpc.rpc_models import JSONRPCRequest, JSONRPCMessage
 
+
 class TestClient:
     """
     Minimal test client that acts like a device.
@@ -43,8 +44,12 @@ class TestClient:
         logging.info(f"[TestClient {self.uuid}] Ready")
 
     # -------- public helpers --------
-    def call_server(self, method: str, params: Any, timeout: Optional[float] = None) -> Any:
-        logging.debug(f"[TestClient {self.uuid}] Calling server method {method} with params={params}")
+    def call_server(
+        self, method: str, params: Any, timeout: Optional[float] = None
+    ) -> Any:
+        logging.debug(
+            f"[TestClient {self.uuid}] Calling server method {method} with params={params}"
+        )
         req = make_request(method, params)
         event = threading.Event()
         self._pending_events[req.id] = event
@@ -85,7 +90,9 @@ class TestClient:
                 self._pending_results[msg.result.id] = msg.result.result
                 event.set()
             else:
-                logging.warning(f"[TestClient {self.uuid}] Received response for unknown id {msg.result.id}")
+                logging.warning(
+                    f"[TestClient {self.uuid}] Received response for unknown id {msg.result.id}"
+                )
         elif msg.error:
             err = msg.error
             event = self._pending_events.get(err.id) if err.id else None
@@ -104,7 +111,9 @@ class TestClient:
                 result = self._methods[req.method](req.params)
                 resp = make_response(result, id=req.id)
             except Exception as exc:
-                resp = make_error("Internal error", id=req.id, code=-32603, data=str(exc))
+                resp = make_error(
+                    "Internal error", id=req.id, code=-32603, data=str(exc)
+                )
         self.client.publish(f"espdisplay/{self.uuid}/client", resp)
 
     # -------- handshake --------
@@ -117,7 +126,10 @@ class TestClient:
             nonlocal assigned_uuid
             try:
                 data = payload if isinstance(payload, dict) else json.loads(payload)
-                if data.get("request_id") == request_id and data.get("type") == "subscribe_reply":
+                if (
+                    data.get("request_id") == request_id
+                    and data.get("type") == "subscribe_reply"
+                ):
                     assigned_uuid = int(data["uuid"])
                     event.set()
             except Exception as exc:
@@ -172,8 +184,12 @@ def main():
 def _interactive_shell(client: TestClient) -> None:
     print("Interactive RPC test client")
     print("Commands:")
-    print("  call <method> <json_params>   - Call server method, e.g. call ping {\"hello\":\"world\"}")
-    print("  register <name> <json_reply>  - Register device method that returns given JSON reply")
+    print(
+        '  call <method> <json_params>   - Call server method, e.g. call ping {"hello":"world"}'
+    )
+    print(
+        "  register <name> <json_reply>  - Register device method that returns given JSON reply"
+    )
     print("  list                          - List registered device methods")
     print("  help                          - Show this help")
     print("  quit/exit                     - Stop client")

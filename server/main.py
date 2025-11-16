@@ -18,8 +18,9 @@ MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD")
 logging.basicConfig(
     level=logging.DEBUG,  # Minimum log level
     format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
-    datefmt="%Y-%m-%d %H:%M:%S"  # Timestamp format
+    datefmt="%Y-%m-%d %H:%M:%S",  # Timestamp format
 )
+
 
 def main():
     logging.info(f"Starting ESP Display Server on MQTT({MQTT_SERVER}:{MQTT_PORT})")
@@ -35,6 +36,7 @@ def main():
     except KeyboardInterrupt:
         logging.info("Shutting Down...")
         client.stop()
+
 
 if __name__ == "__main__":
     main()
