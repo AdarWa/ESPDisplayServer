@@ -1,5 +1,5 @@
-from typing import List, Optional, Literal, Union
-from pydantic import BaseModel
+from typing import Annotated, List, Optional, Literal, Union
+from pydantic import BaseModel, StringConstraints
 
 
 # -------------------------------------
@@ -50,7 +50,7 @@ StateDefinition = Union[NumberState, BooleanState, EnumState, CallbackState]
 class InternalState(BaseModel):
     name: str
     definition: StateDefinition
-
+    bind: Optional[Annotated[str, StringConstraints(pattern=r"^ha:.*")]] = None
 
 class InternalStates(BaseModel):
     states: List[InternalState]
@@ -135,32 +135,21 @@ class StateBasedAction(BaseModel):
     on_state: str
     actions: List[str]
 
-
-# -------------------------------------
-# Home Assistant entity bind
-# -------------------------------------
-
-
-class HAEntityBind(BaseModel):
-    entity_id: str
-    map_to_state: str
-
-
 # -------------------------------------
 # Timer module
 # -------------------------------------
 
 
 class TimerModule(BaseModel):
-    id: str
-    callback: str
-    interval_seconds: int
+    callback: Optional[str]
+    timeout_seconds: int
+    time_state: str
+    
 
 
 class Module(BaseModel):
     id: str
-    bound_states: List[str]
-    timers: List[TimerModule]
+    timer: TimerModule
 
 
 # -------------------------------------
@@ -173,5 +162,4 @@ class FullConfig(BaseModel):
     templates: List[Template]
     internal_states: InternalStates
     actions: Actions
-    ha_entities: List[HAEntityBind]
     modules: List[Module]

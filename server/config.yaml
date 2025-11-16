@@ -1,109 +1,91 @@
 screens:
   - id: ac_screen
     template: ac_template
-    state_bind:
-      - state: ac_power
-        internal: power
-      - state: ac_temp
-        internal: temp
+    state_bindings:
+      power_button: power
+      temp_display: temp
+      fan_button: fan
 
 templates:
-  - id: ac_template
+  - name: ac_template
     fields:
-      - id: power_button
-        type: enum
-        options: [on, off]
-        bind:
-          internal_state: power
-      - id: temp_display
-        type: number
-        bind:
-          internal_state: temp
-      - id: fan_button
-        type: boolean
+      - name: power_button
+        bind_to_internal: power
+      - name: temp_display
+        bind_to_internal: temp
+      - name: fan_button
+        bind_to_internal: fan
         callback: fan_toggle
+    types:
+      - type: enum
+        options: [on, off]
+        default: off
+      - type: number
+        default: 22
+      - type: boolean
+        default: false
 
 internal_states:
-  - id: power
-    type: enum
-    default: off
-    options: [on, off]
-
-  - id: temp
-    type: number
-    default: 22
-
-  - id: fan
-    type: boolean
-    default: false
-
-ha_entity_bind:
-  - entity: climate.living_room
-    state_map:
-      temperature: temp
-      hvac_mode: power
-
-callbacks:
-  - id: fan_toggle
+  states:
+    - name: power
+      definition:
+        type: enum
+        options: [on, off]
+        default: off
+      bind: ha:climate.living_room.hvac_mode
+    - name: temp
+      definition:
+        type: number
+        default: 22
+      bind: ha:climate.living_room.temperature
+    - name: fan
+      definition:
+        type: boolean
+        default: false
+    - name: timer_module_state
+      definition:
+        type: number
+        default: 300
 
 modules:
   - id: timer_module
-    type: timer
-    bound_states:
-      interval_minutes: 5
-    callbacks:
-      - callback_id: timer_tick
+    timer:
+      callback: timer_up
+      time_state: timer_module_state
 
 actions:
-  # Simple script action
-  - id: log_fan_change
-    call_script:
-      script_name: system.log
-      args:
-        message: Fan state changed
-
-  # Update HA when power changes
-  - id: sync_ac_power
-    update_state:
-      target: ha:climate.living_room.hvac_mode
-      value_from_internal: power
-
-  # Update HA when temp changes
-  - id: sync_ac_temp
-    update_state:
-      target: ha:climate.living_room.temperature
-      value_from_internal: temp
-
-  # Comparison action example
-  - id: auto_turn_off_heater
-    compare:
-      left: temp
-      operator: gt
-      right: 27
-
-  # New on_callback action
-  - id: toggle_fan_on_callback
-    on_callback:
-      callback_id: fan_toggle
+  actions:
+    - id: log_fan_change
+      call_script:
+        script_name: system.log
+        args:
+          message: Fan state changed
+    - id: sync_ac_power
+      update_state:
+        target: ha:climate.living_room.hvac_mode
+        value: power
+    - id: sync_ac_temp
+      update_state:
+        target: ha:climate.living_room.temperature
+        value: temp
+    - id: auto_turn_off_heater
+      compare:
+        left: temp
+        operator: gt
+        right: 27
+    - id: toggle_fan_on_callback
+      on_callback:
+        callback_id: fan_toggle
+        actions:
+          - update_fan_state
+          - log_fan_change
+    - id: update_fan_state
+      update_state:
+        target: fan
+        value: "{not fan}"
+  state_based: []
+  on_callback:
+    - callback_id: fan_toggle
       actions:
         - update_fan_state
         - log_fan_change
-
-  - id: update_fan_state
-    update_state:
-      target: fan
-      value: "{not fan}"   # simple expression, your engine will replace it
-
-state_based_actions:
-  - on_state: power
-    actions:
-      - sync_ac_power
-
-  - on_state: temp
-    actions:
-      - sync_ac_temp
-
-on_callback:
-  - callback_id: timer_tick
-    actions:
-      - auto_turn_off_heater
