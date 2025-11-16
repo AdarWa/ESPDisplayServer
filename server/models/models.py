@@ -52,6 +52,7 @@ class InternalState(BaseModel):
     definition: StateDefinition
     bind: Optional[Annotated[str, StringConstraints(pattern=r"^ha:.*")]] = None
 
+
 class InternalStates(BaseModel):
     states: List[InternalState]
 
@@ -135,6 +136,7 @@ class StateBasedAction(BaseModel):
     on_state: str
     actions: List[str]
 
+
 # -------------------------------------
 # Timer module
 # -------------------------------------
@@ -144,7 +146,6 @@ class TimerModule(BaseModel):
     callback: Optional[str]
     timeout_seconds: int
     time_state: str
-    
 
 
 class Module(BaseModel):
