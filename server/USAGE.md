@@ -65,3 +65,9 @@
   storage.write_json("sessions.json", {"sessions": [0, 1]})
   sessions = storage.read_json("sessions.json")
   ```
+- Minimal test client (simulates a device):
+  ```
+  # env: MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD
+  python -m rpc.test_client
+  ```
+  The client performs the subscribe handshake, calls the server `ping` method once, registers an `echo` method for the server to invoke, and then sits idle handling incoming RPCs until Ctrl+C.
