@@ -10,7 +10,7 @@ from protocol.session_handler import SessionHandler
 
 load_dotenv(ENV_FILE)
 
-MQTT_SERVER = os.environ.get("MQTT_SERVER", "mosquitto")
+MQTT_SERVER = os.environ.get("MQTT_SERVER", "localhost")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 MQTT_USER = os.environ.get("MQTT_USER")
 MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD")

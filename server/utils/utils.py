@@ -16,3 +16,11 @@ def singleton(cls):
         return instances[cls]
 
     return get_instance
+  
+rpc_functions: dict = {}
+def register_rpc(name: str = ""): 
+    def decorator(func):
+        key = name or func.__name__
+        rpc_functions[key] = func
+        return func
+    return decorator

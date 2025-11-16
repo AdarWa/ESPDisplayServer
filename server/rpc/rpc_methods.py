@@ -1,4 +1,4 @@
-from rpc.rpc_session_handler import register_rpc
+from utils.utils import register_rpc
 
 
 @register_rpc()

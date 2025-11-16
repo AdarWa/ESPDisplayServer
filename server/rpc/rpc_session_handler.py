@@ -8,14 +8,8 @@ from rpc.rpc_protocol import (
     make_request, make_response, make_error, deserialize
 )
 from rpc.rpc_models import JSONRPCRequest, JSONRPCMessage
-
-rpc_functions: dict = {}
-def register_rpc(name: str = ""): 
-    def decorator(func):
-        key = name or func.__name__
-        rpc_functions[key] = func
-        return func
-    return decorator
+from utils.utils import rpc_functions
+import rpc.rpc_methods as _
 
 class RPCSessionHandler:
     """

@@ -14,12 +14,6 @@ class MQTT:
         self.client.on_message = self.on_msg
         self.subscribers: Dict[str, Tuple[Callable[[Any], None], bool]] = {}
         self.client.connect(address, port, 60)
-        start = time.time()
-        while not self.client.is_connected() and time.time() - start < timeout:
-            time.sleep(0.1)
-        if time.time() - start >= timeout and not self.client.is_connected():
-            logging.warning("Timeout while connecting to MQTT")
-            self.client.disconnect()
         self.client.loop_start()
 
     def stop(self):
