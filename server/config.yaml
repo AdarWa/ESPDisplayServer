@@ -45,7 +45,7 @@ internal_states:
     - name: timer_module_state
       definition:
         type: number
-        default: 300
+        default: 0
 
 modules:
   - id: timer_module
@@ -83,9 +83,3 @@ actions:
       update_state:
         target: fan
         value: "{not fan}"
-  state_based: []
-  on_callback:
-    - callback_id: fan_toggle
-      actions:
-        - update_fan_state
-        - log_fan_change

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Annotated, List, Optional, Literal, Union
 from pydantic import BaseModel, StringConstraints
 
@@ -104,6 +105,8 @@ class CompareAction(BaseModel):
     left: str
     operator: Literal["eq", "ne", "lt", "gt", "le", "ge"]
     right: Union[str, float, int, bool]
+    on_true: Optional[Action]
+    on_false: Optional[Action]
 
 
 class ScriptCall(BaseModel):
@@ -127,9 +130,6 @@ class Action(BaseModel):
 
 class Actions(BaseModel):
     actions: List[Action]
-
-    state_based: List["StateBasedAction"]
-    on_callback: List[OnCallback]
 
 
 class StateBasedAction(BaseModel):
