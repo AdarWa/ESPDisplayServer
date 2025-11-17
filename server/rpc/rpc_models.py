@@ -32,6 +32,7 @@ class JSONRPCErrorResponse(JSONRPCBase):
 
 class JSONRPCMessage(BaseModel):
     """Discriminated wrapper that can hold request or response."""
+
     request: Optional[JSONRPCRequest] = None
     result: Optional[JSONRPCResult] = None
     error: Optional[JSONRPCErrorResponse] = None
@@ -45,7 +46,6 @@ class JSONRPCMessage(BaseModel):
         if "error" in values:
             return {"error": JSONRPCErrorResponse(**values)}
         raise ValueError("Not a valid JSON-RPC 2.0 message")
-
 
 
 class JSONRPCException(Exception):

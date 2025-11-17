@@ -1,0 +1,91 @@
+screens:
+  - id: ac_screen
+    template: ac_template
+    state_bindings:
+      power_button: power
+      temp_display: temp
+      fan_button: fan
+
+templates:
+  - name: ac_template
+    fields:
+      - name: power_button
+        bind_to_internal: power
+      - name: temp_display
+        bind_to_internal: temp
+      - name: fan_button
+        bind_to_internal: fan
+        callback: fan_toggle
+    types:
+      - type: enum
+        options: [on, off]
+        default: off
+      - type: number
+        default: 22
+      - type: boolean
+        default: false
+
+internal_states:
+  states:
+    - name: power
+      definition:
+        type: enum
+        options: [on, off]
+        default: off
+      bind: ha:climate.living_room.hvac_mode
+    - name: temp
+      definition:
+        type: number
+        default: 22
+      bind: ha:climate.living_room.temperature
+    - name: fan
+      definition:
+        type: boolean
+        default: false
+    - name: timer_module_state
+      definition:
+        type: number
+        default: 300
+
+modules:
+  - id: timer_module
+    timer:
+      callback: timer_up
+      time_state: timer_module_state
+
+actions:
+  actions:
+    - id: log_fan_change
+      call_script:
+        script_name: system.log
+        args:
+          message: Fan state changed
+    - id: sync_ac_power
+      update_state:
+        target: ha:climate.living_room.hvac_mode
+        value: power
+    - id: sync_ac_temp
+      update_state:
+        target: ha:climate.living_room.temperature
+        value: temp
+    - id: auto_turn_off_heater
+      compare:
+        left: temp
+        operator: gt
+        right: 27
+    - id: toggle_fan_on_callback
+      on_callback:
+        callback_id: fan_toggle
+        actions:
+          - update_fan_state
+          - log_fan_change
+    - id: update_fan_state
+      update_state:
+        target: fan
+        value: "{not fan}"
+  state_based: []
+  on_callback:
+    - callback_id: fan_toggle
+      actions:
+        - update_fan_state
+        - log_fan_change

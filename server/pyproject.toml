@@ -10,3 +10,10 @@ dependencies = [
     "python-dotenv",
     "pyyaml"
 ]
+
+[tool.ruff]
+lint.ignore = [
+    "E402",  # allow code before imports
+    "F401",  # unused imports
+    "F841",  # unused variables
+]
