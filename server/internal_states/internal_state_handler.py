@@ -3,6 +3,7 @@ import aiosqlite
 from models.models import StoredInternalState
 from utils.utils import singleton
 
+
 @singleton
 class InternalStateHandler:
     def __init__(self, path: str = "internal_state.db"):
@@ -61,7 +62,7 @@ class InternalStateHandler:
             cursor = await db.execute("SELECT key FROM internal_state")
             rows = await cursor.fetchall()
         return [r[0] for r in rows]
-    
+
     async def bulk_set(self, states: List[StoredInternalState]):
         """Set multiple StoredInternalState objects at once."""
         await self._init()

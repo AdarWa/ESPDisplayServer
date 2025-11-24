@@ -53,6 +53,7 @@ class InternalState(BaseModel):
     definition: StateDefinition = Field(discriminator="type")
     bind: Optional[Annotated[str, StringConstraints(pattern=r"^ha:.*")]] = None
 
+
 class StoredInternalState(InternalState):
     value: Union[float, bool, str]
 
