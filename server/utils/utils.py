@@ -1,6 +1,7 @@
 import json
 import asyncio
 
+
 def is_json(myjson):
     try:
         json.loads(myjson)
