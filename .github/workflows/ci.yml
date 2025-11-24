@@ -9,13 +9,21 @@ on:
       - main
 
 jobs:
-  ruff:
+  lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # Checkout your repository code
+      - uses: actions/checkout@v4
 
-      - name: Install Ruff
-        # You can use the official action for installation and running
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install project dependencies
+        run: uv sync
+
+      - name: Ruff check
         uses: astral-sh/ruff-action@v3
         with:
           src: './server'
+
+      - name: Run pytest
+        run: uv run pytest -q server
