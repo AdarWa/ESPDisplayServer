@@ -79,3 +79,33 @@ class InternalStateHandler:
                         (state.name, value),
                     )
                 await db.commit()
+
+    async def set_if_not_exists(self, state: StoredInternalState):
+        """Insert a state only if the key does not exist."""
+        await self._init()
+        value = state.model_dump_json()
+        async with aiosqlite.connect(self.path) as db:
+            await db.execute(
+                """
+                INSERT OR IGNORE INTO internal_state (key, value)
+                VALUES (?, ?)
+                """,
+                (state.name, value),
+            )
+            await db.commit()
+
+    async def bulk_set_if_not_exists(self, states: List[StoredInternalState]):
+        """Insert multiple states only if the keys do not exist."""
+        await self._init()
+        async with aiosqlite.connect(self.path) as db:
+            async with db.execute("BEGIN"):
+                for state in states:
+                    value = state.model_dump_json()
+                    await db.execute(
+                        """
+                        INSERT OR IGNORE INTO internal_state (key, value)
+                        VALUES (?, ?)
+                        """,
+                        (state.name, value),
+                    )
+                await db.commit()

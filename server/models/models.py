@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Annotated, List, Optional, Literal, Union
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 
 # -------------------------------------
@@ -53,6 +53,20 @@ class InternalState(BaseModel):
     definition: StateDefinition = Field(discriminator="type")
     bind: Optional[Annotated[str, StringConstraints(pattern=r"^ha:.*")]] = None
 
+    def to_stored_internal_state(
+        self, value: Optional[Union[float, bool, str]] = None
+    ) -> StoredInternalState:
+        if self.definition.type == "callback":
+            return StoredInternalState(
+                name=self.name, definition=self.definition, value=""
+            )
+        return StoredInternalState(
+            name=self.name,
+            definition=self.definition,
+            bind=self.bind,
+            value=value or self.definition.default,
+        )
+
 
 class StoredInternalState(InternalState):
     value: Union[float, bool, str]
@@ -60,6 +74,12 @@ class StoredInternalState(InternalState):
 
 class InternalStates(BaseModel):
     states: List[InternalState]
+
+    def find_state_by_name(self, name: str) -> Optional[InternalState]:
+        for state in self.states:
+            if state.name == name:
+                return state
+        return None
 
 
 # -------------------------------------
@@ -165,6 +185,41 @@ class FullConfig(BaseModel):
     internal_states: InternalStates
     actions: Actions
     modules: List[Module]
+
+    @model_validator(mode="before")
+    def validate_references(cls, values):
+        states = values.get("internal_states", {}).get("states", [])
+        state_names = {state["name"] for state in states}
+        action_ids = {
+            action["id"] for action in values.get("actions", {}).get("actions", [])
+        }
+
+        for screen in values.get("screens", []):
+            for bound_state in screen.get("state_bindings", {}).values():
+                if bound_state not in state_names:
+                    raise ValueError(
+                        f"Screen '{screen['id']}' binds to unknown internal state '{bound_state}'"
+                    )
+
+        for action in values.get("actions", {}).get("actions", []):
+            if action.get("on_callback"):
+                for act_id in action.get("on_callback", {}).get("actions", []):
+                    if act_id not in action_ids:
+                        raise ValueError(
+                            f"OnCallback in action '{action['id']}' references unknown action id '{act_id}'"
+                        )
+        binds = set()
+        for state in states:
+            bind = state.get("bind")
+            if bind:
+                len_before = len(binds)
+                binds.add(bind)
+                if len(binds) == len_before:
+                    raise ValueError(
+                        f"Multiple internal states are bound to the same state"
+                    )
+
+        return values
 
 
 # --------------------------------------
