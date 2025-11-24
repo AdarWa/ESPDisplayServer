@@ -216,7 +216,7 @@ class FullConfig(BaseModel):
                 binds.add(bind)
                 if len(binds) == len_before:
                     raise ValueError(
-                        f"Multiple internal states are bound to the same state"
+                        f"Multiple internal states are bound to state {bind}"
                     )
 
         return values
