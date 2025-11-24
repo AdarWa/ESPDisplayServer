@@ -30,14 +30,17 @@ def register_rpc(name: str = ""):
     def decorator(func):
         key = name or func.__name__
         rpc_functions[key] = func
+
         def error_handler(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
                 return {"error": str(e)}
+
         return error_handler
 
     return decorator
+
 
 def set_value_by_string(value: str, state: InternalState) -> StoredInternalState:
     if state.definition.type == "boolean":

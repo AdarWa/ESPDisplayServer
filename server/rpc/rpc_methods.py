@@ -21,6 +21,7 @@ def reload_config(params, handler):
         return {"error": str(exc)}
     return config.model_dump()
 
+
 @register_rpc()
 def set_state(params, handler):
     name = params["state"]

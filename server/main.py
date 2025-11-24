@@ -1,4 +1,5 @@
 import os
+
 if os.path.exists("local.env"):
     ENV_FILE = "local.env"
 elif os.path.exists("prod.env"):
@@ -41,7 +42,7 @@ logging.basicConfig(
 
 def main():
     logging.info(f"Starting ESP Display Server on MQTT({MQTT_SERVER}:{MQTT_PORT})")
-    
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 

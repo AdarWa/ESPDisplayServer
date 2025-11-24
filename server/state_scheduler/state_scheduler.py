@@ -32,6 +32,7 @@ def bulk_add_trigger(
     for entity_id in entity_ids:
         listener.add_trigger(type, callback, entity_id=entity_id)
 
+
 class StateScheduler(AsyncLoopBase):
     def __init__(self, base_url, token, interval=2):
         super().__init__(interval)
