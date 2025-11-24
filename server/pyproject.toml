@@ -5,10 +5,12 @@ description = "A Server for ESPDisplay"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiosqlite>=0.21.0",
+    "homeassistant-api>=5.0.2.post1",
     "paho-mqtt>=2.1.0",
     "pydantic>=2.11.7",
     "python-dotenv",
-    "pyyaml"
+    "pyyaml",
 ]
 
 [tool.ruff]

@@ -21,18 +21,18 @@ class NumberState(BaseModel):
     type: Literal["number"] = "number"
     min: Optional[float] = None
     max: Optional[float] = None
-    default: Optional[float] = None
+    default: float
 
 
 class BooleanState(BaseModel):
     type: Literal["boolean"] = "boolean"
-    default: Optional[bool] = None
+    default: bool
 
 
 class EnumState(BaseModel):
     type: Literal["enum"] = "enum"
     options: List[str]
-    default: Optional[str] = None
+    default: str
 
 
 class CallbackState(BaseModel):
@@ -52,6 +52,9 @@ class InternalState(BaseModel):
     name: str
     definition: StateDefinition = Field(discriminator="type")
     bind: Optional[Annotated[str, StringConstraints(pattern=r"^ha:.*")]] = None
+
+class StoredInternalState(InternalState):
+    value: Union[float, bool, str]
 
 
 class InternalStates(BaseModel):

@@ -39,13 +39,14 @@ class AsyncLoopBase:
         self._task = None
         self._stop = asyncio.Event()
 
-    async def on_iteration(self):
+    def on_iteration(self):
         raise NotImplementedError
 
     async def _runner(self):
         try:
             while not self._stop.is_set():
-                await self.on_iteration()
+                # run sync code in a thread
+                await asyncio.to_thread(self.on_iteration)
                 await asyncio.wait_for(self._stop.wait(), timeout=self.interval)
         except asyncio.TimeoutError:
             pass
