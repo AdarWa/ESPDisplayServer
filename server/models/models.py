@@ -73,6 +73,7 @@ class Template(BaseModel):
     name: str
     fields: List[TemplateField]
 
+
 # -------------------------------------
 # Screen configuration
 # -------------------------------------
@@ -161,9 +162,11 @@ class FullConfig(BaseModel):
     actions: Actions
     modules: List[Module]
 
+
 # --------------------------------------
 # Template configuration
 # --------------------------------------
+
 
 class TemplateConfig(BaseModel):
     templates: List[Template]

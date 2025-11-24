@@ -29,7 +29,7 @@ class TestClient:
         password: Optional[str] = None,
         handshake_timeout: float = 5.0,
         default_timeout: float = 5.0,
-        uuid: int = -1
+        uuid: int = -1,
     ) -> None:
         self.default_timeout = default_timeout
         self._pending_events: Dict[str, threading.Event] = {}
@@ -179,7 +179,7 @@ def main():
         port=mqtt_port,
         username=mqtt_user,
         password=mqtt_password,
-        uuid=uuid
+        uuid=uuid,
     )
 
     try:

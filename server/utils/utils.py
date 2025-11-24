@@ -32,7 +32,6 @@ def register_rpc(name: str = ""):
     return decorator
 
 
-
 class AsyncLoopBase:
     def __init__(self, interval):
         self.interval = interval
@@ -58,4 +57,3 @@ class AsyncLoopBase:
         self._stop.set()
         if self._task:
             await self._task
-
