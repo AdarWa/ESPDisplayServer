@@ -4,7 +4,7 @@ from internal_states.internal_state_handler import InternalStateHandler
 from models.models import InternalState, StoredInternalState
 from state_scheduler.ha_listener import AsyncWrapperHAListener
 from storage.config_manager import ConfigManager
-from utils.utils import AsyncLoopBase
+from utils.utils import AsyncLoopBase, set_value_by_string
 import asyncio
 from typing import Callable
 
@@ -32,19 +32,8 @@ def bulk_add_trigger(
     for entity_id in entity_ids:
         listener.add_trigger(type, callback, entity_id=entity_id)
 
-
-def set_value_by_string(value: str, state: InternalState) -> StoredInternalState:
-    if state.definition.type == "boolean":
-        return state.to_stored_internal_state(value == "true" or value == "on")
-    if state.definition.type == "number":
-        return state.to_stored_internal_state(float(value))
-    if state.definition.type == "enum":
-        return state.to_stored_internal_state(value)
-    return state.to_stored_internal_state()
-
-
 class StateScheduler(AsyncLoopBase):
-    def __init__(self, interval, base_url, token):
+    def __init__(self, base_url, token, interval=2):
         super().__init__(interval)
         self.base_url = base_url
         self.token = token
@@ -52,7 +41,7 @@ class StateScheduler(AsyncLoopBase):
 
         config = ConfigManager().get()
 
-        asyncio.run(
+        asyncio.get_running_loop().create_task(
             InternalStateHandler().bulk_set_if_not_exists(
                 states_to_stored_states(config.internal_states.states)
             )
@@ -62,6 +51,7 @@ class StateScheduler(AsyncLoopBase):
 
         self.bind_dict = get_ha_bind_dict(config.internal_states.states)  # internal:ha
         self.bind_list = list(self.bind_dict.values())
+
         bulk_add_trigger(self.bind_list, self.ha_listener, self.handle_new_state)
 
     def _get_bound_state_by_entity_id(self, entity_id: str) -> Optional[InternalState]:
@@ -73,7 +63,7 @@ class StateScheduler(AsyncLoopBase):
     def handle_new_state(self, entity_id: str, new_state: str):
         internal_state = self._get_bound_state_by_entity_id(entity_id)
         assert internal_state
-        asyncio.run(
+        asyncio.get_running_loop().create_task(
             InternalStateHandler().set(set_value_by_string(new_state, internal_state))
         )
 

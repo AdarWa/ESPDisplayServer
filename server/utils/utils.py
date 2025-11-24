@@ -1,6 +1,8 @@
 import json
 import asyncio
 
+from models.models import InternalState, StoredInternalState
+
 
 def is_json(myjson):
     try:
@@ -28,9 +30,23 @@ def register_rpc(name: str = ""):
     def decorator(func):
         key = name or func.__name__
         rpc_functions[key] = func
-        return func
+        def error_handler(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                return {"error": str(e)}
+        return error_handler
 
     return decorator
+
+def set_value_by_string(value: str, state: InternalState) -> StoredInternalState:
+    if state.definition.type == "boolean":
+        return state.to_stored_internal_state(value == "true" or value == "on")
+    if state.definition.type == "number":
+        return state.to_stored_internal_state(float(value))
+    if state.definition.type == "enum":
+        return state.to_stored_internal_state(value)
+    return state.to_stored_internal_state()
 
 
 class AsyncLoopBase:
