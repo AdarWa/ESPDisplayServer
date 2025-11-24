@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from homeassistant_api import WebsocketClient
 from internal_states.internal_state_handler import InternalStateHandler
-from models.models import FullConfig, InternalState, StoredInternalState
+from models.models import InternalState, StoredInternalState
 from state_scheduler.ha_listener import AsyncWrapperHAListener
 from storage.config_manager import ConfigManager
 from utils.utils import AsyncLoopBase
