@@ -29,6 +29,7 @@ class TestClient:
         password: Optional[str] = None,
         handshake_timeout: float = 5.0,
         default_timeout: float = 5.0,
+        uuid: int = -1
     ) -> None:
         self.default_timeout = default_timeout
         self._pending_events: Dict[str, threading.Event] = {}
@@ -36,7 +37,10 @@ class TestClient:
         self._methods: Dict[str, Callable[[Any], Any]] = {}
 
         self.client = MQTT(address, port, username, password)
-        self.uuid = self._handshake(handshake_timeout)
+        if uuid > -1:
+            self.uuid = uuid
+        else:
+            self.uuid = self._handshake(handshake_timeout)
 
         # listen for responses and server->device calls
         self.client.subscribe(f"espdisplay/{self.uuid}/server", self._on_message)
@@ -165,12 +169,17 @@ def main():
     mqtt_port = int(os.environ.get("MQTT_PORT", "1883"))
     mqtt_user = os.environ.get("MQTT_USER")
     mqtt_password = os.environ.get("MQTT_PASSWORD")
-
+    uuid = input("input uuid to use(leave empty to handshake): ")
+    if uuid:
+        uuid = int(uuid)
+    else:
+        uuid = -1
     client = TestClient(
         address=mqtt_server,
         port=mqtt_port,
         username=mqtt_user,
         password=mqtt_password,
+        uuid=uuid
     )
 
     try:

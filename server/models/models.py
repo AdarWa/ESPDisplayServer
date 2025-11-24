@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Annotated, List, Optional, Literal, Union
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 
 
 # -------------------------------------
@@ -50,7 +50,7 @@ StateDefinition = Union[NumberState, BooleanState, EnumState, CallbackState]
 
 class InternalState(BaseModel):
     name: str
-    definition: StateDefinition
+    definition: StateDefinition = Field(discriminator="type")
     bind: Optional[Annotated[str, StringConstraints(pattern=r"^ha:.*")]] = None
 
 
@@ -72,8 +72,6 @@ class TemplateField(BaseModel):
 class Template(BaseModel):
     name: str
     fields: List[TemplateField]
-    types: Optional[List[StateDefinition]] = None
-
 
 # -------------------------------------
 # Screen configuration
@@ -104,9 +102,9 @@ class OnCallback(BaseModel):
 class CompareAction(BaseModel):
     left: str
     operator: Literal["eq", "ne", "lt", "gt", "le", "ge"]
-    right: Union[str, float, int, bool]
-    on_true: Optional[Action]
-    on_false: Optional[Action]
+    right: Union[str, float, int]
+    on_true: Optional[Action] = None
+    on_false: Optional[Action] = None
 
 
 class ScriptCall(BaseModel):
@@ -144,7 +142,6 @@ class StateBasedAction(BaseModel):
 
 class TimerModule(BaseModel):
     callback: Optional[str]
-    timeout_seconds: int
     time_state: str
 
 
@@ -160,7 +157,13 @@ class Module(BaseModel):
 
 class FullConfig(BaseModel):
     screens: List[Screen]
-    templates: List[Template]
     internal_states: InternalStates
     actions: Actions
     modules: List[Module]
+
+# --------------------------------------
+# Template configuration
+# --------------------------------------
+
+class TemplateConfig(BaseModel):
+    templates: List[Template]

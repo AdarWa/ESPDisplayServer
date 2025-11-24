@@ -17,3 +17,11 @@ lint.ignore = [
     "F401",  # unused imports
     "F841",  # unused variables
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

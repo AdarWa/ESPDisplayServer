@@ -6,32 +6,13 @@ screens:
       temp_display: temp
       fan_button: fan
 
-templates:
-  - name: ac_template
-    fields:
-      - name: power_button
-        bind_to_internal: power
-      - name: temp_display
-        bind_to_internal: temp
-      - name: fan_button
-        bind_to_internal: fan
-        callback: fan_toggle
-    types:
-      - type: enum
-        options: [on, off]
-        default: off
-      - type: number
-        default: 22
-      - type: boolean
-        default: false
-
 internal_states:
   states:
     - name: power
       definition:
         type: enum
-        options: [on, off]
-        default: off
+        options: ["on", "off"]
+        default: "off"
       bind: ha:climate.living_room.hvac_mode
     - name: temp
       definition:

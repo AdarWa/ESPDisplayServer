@@ -1,0 +1,10 @@
+templates:
+  - name: ac_template
+    fields:
+      - name: power_button
+        bind_to_internal: power
+      - name: temp_display
+        bind_to_internal: temp
+      - name: fan_button
+        bind_to_internal: fan
+        callback: fan_toggle
