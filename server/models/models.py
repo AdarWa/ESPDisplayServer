@@ -190,8 +190,9 @@ class FullConfig(BaseModel):
     def validate_references(cls, values):
         states = values.get("internal_states", {}).get("states", [])
         state_names = {state["name"] for state in states}
+        actions = values.get("actions", {}).get("actions", [])
         action_ids = {
-            action["id"] for action in values.get("actions", {}).get("actions", [])
+            action["id"] for action in actions
         }
 
         for screen in values.get("screens", []):
@@ -201,13 +202,18 @@ class FullConfig(BaseModel):
                         f"Screen '{screen['id']}' binds to unknown internal state '{bound_state}'"
                     )
 
-        for action in values.get("actions", {}).get("actions", []):
+        for action in actions:
             if action.get("on_callback"):
                 for act_id in action.get("on_callback", {}).get("actions", []):
                     if act_id not in action_ids:
                         raise ValueError(
                             f"OnCallback in action '{action['id']}' references unknown action id '{act_id}'"
                         )
+            # if sum([action.("on_callback")])
+            sub_actions = [action.get("on_callback"), action.get("compare"), action.get("call_script"), action.get("update_state")]
+            if sum(x is not None for x in sub_actions) != 1:
+                raise ValueError(f"No action definition found for {action.get("id")}")
+            
         binds = set()
         for state in states:
             bind = state.get("bind")
@@ -218,6 +224,7 @@ class FullConfig(BaseModel):
                     raise ValueError(
                         f"Multiple internal states are bound to state {bind}"
                     )
+                    
 
         return values
 

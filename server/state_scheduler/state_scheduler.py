@@ -1,14 +1,15 @@
 from typing import Dict, List, Optional
 from homeassistant_api import WebsocketClient
 from internal_states.internal_state_handler import InternalStateHandler
-from models.models import InternalState, StoredInternalState
+from models.models import Action, InternalState, StoredInternalState
 from state_scheduler.ha_listener import AsyncWrapperHAListener
 from storage.config_manager import ConfigManager
-from utils.utils import AsyncLoopBase, set_value_by_string
+from utils.utils import set_value_by_string
 import asyncio
 from typing import Callable
 
-TriggerCallback = Callable[[str, str], None]
+type TriggerCallback = Callable[[str, str], None]
+type ActionKey = str
 
 
 def states_to_stored_states(states: List[InternalState]) -> List[StoredInternalState]:
@@ -31,11 +32,11 @@ def bulk_add_trigger(
 ) -> None:
     for entity_id in entity_ids:
         listener.add_trigger(type, callback, entity_id=entity_id)
+        
 
 
-class StateScheduler(AsyncLoopBase):
-    def __init__(self, base_url, token, interval=2):
-        super().__init__(interval)
+class StateScheduler:
+    def __init__(self, base_url, token):
         self.base_url = base_url
         self.token = token
         self.client = WebsocketClient(base_url, token)
@@ -54,6 +55,8 @@ class StateScheduler(AsyncLoopBase):
         self.bind_list = list(self.bind_dict.values())
 
         bulk_add_trigger(self.bind_list, self.ha_listener, self.handle_new_state)
+        
+        self.actions = self._get_all_actions()
 
     def _get_bound_state_by_entity_id(self, entity_id: str) -> Optional[InternalState]:
         for key, value in self.bind_dict.items():
@@ -68,5 +71,27 @@ class StateScheduler(AsyncLoopBase):
             InternalStateHandler().set(set_value_by_string(new_state, internal_state))
         )
 
-    def on_iteration(self):
-        pass
+    def _get_all_actions(self) -> Dict[str, Action]:
+        config = ConfigManager().get()
+        return {action.id:action for action in config.actions.actions}
+    
+    def _find_action(self, action_id: ActionKey) -> Action:
+        action = self.actions.get(action_id)
+        if not action:
+            raise KeyError(f"Action {action_id} not found")
+        return action
+        
+    
+    def call_action(self, action_id: ActionKey):
+        action = self._find_action(action_id)
+        if action.call_script:
+            raise NotImplementedError()
+        elif action.on_callback:
+            actions = action.on_callback.actions
+            for _action in actions:
+                self.call_action(_action)
+        elif action.compare:
+            cmp = action.compare
+            left_state_id = cmp.left
+            left_value = InternalStateHandler().get()
+                
