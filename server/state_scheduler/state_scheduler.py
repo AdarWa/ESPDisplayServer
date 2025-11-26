@@ -1,6 +1,9 @@
 from typing import Dict, List, Optional
 from homeassistant_api import WebsocketClient
-from internal_states.internal_state_handler import InternalStateHandler, SyncInternalStateHandler
+from internal_states.internal_state_handler import (
+    InternalStateHandler,
+    SyncInternalStateHandler,
+)
 from models.models import Action, InternalState, StoredInternalState
 from state_scheduler.ha_listener import AsyncWrapperHAListener
 from storage.config_manager import ConfigManager
@@ -32,7 +35,6 @@ def bulk_add_trigger(
 ) -> None:
     for entity_id in entity_ids:
         listener.add_trigger(type, callback, entity_id=entity_id)
-        
 
 
 class StateScheduler:
@@ -44,8 +46,8 @@ class StateScheduler:
         config = ConfigManager().get()
 
         SyncInternalStateHandler().bulk_set_if_not_exists(
-                states_to_stored_states(config.internal_states.states)
-            )
+            states_to_stored_states(config.internal_states.states)
+        )
 
         self.ha_listener = AsyncWrapperHAListener(self.client)
 
@@ -53,7 +55,7 @@ class StateScheduler:
         self.bind_list = list(self.bind_dict.values())
 
         bulk_add_trigger(self.bind_list, self.ha_listener, self.handle_new_state)
-        
+
         self.actions = self._get_all_actions()
 
     def _get_bound_state_by_entity_id(self, entity_id: str) -> Optional[InternalState]:
@@ -69,15 +71,14 @@ class StateScheduler:
 
     def _get_all_actions(self) -> Dict[str, Action]:
         config = ConfigManager().get()
-        return {action.id:action for action in config.actions.actions}
-    
+        return {action.id: action for action in config.actions.actions}
+
     def _find_action(self, action_id: ActionKey) -> Action:
         action = self.actions.get(action_id)
         if not action:
             raise KeyError(f"Action {action_id} not found")
         return action
-        
-    
+
     def call_action(self, action_id: ActionKey):
         action = self._find_action(action_id)
         if action.call_script:
@@ -108,6 +109,3 @@ class StateScheduler:
                     self.call_action(cmp.on_false)
         elif action.update_state:
             raise NotImplementedError()
-            
-            
-                

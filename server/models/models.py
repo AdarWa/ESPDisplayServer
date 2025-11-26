@@ -188,12 +188,12 @@ class FullConfig(BaseModel):
 
     @model_validator(mode="before")
     def validate_references(cls, values):
-        states = values.get("internal_states", {}) .get("states", [])
+        states = values.get("internal_states", {}).get("states", [])
         state_names = {state["name"] for state in states}
 
-        actions = values.get("actions", {}) .get("actions", [])
+        actions = values.get("actions", {}).get("actions", [])
         action_ids = {action["id"] for action in actions if "id" in action}
-        
+
         def check_state(state: str):
             return state in state_names or state.startswith("ha:")
 
@@ -264,7 +264,9 @@ class FullConfig(BaseModel):
             bind = state.get("bind")
             if bind:
                 if bind in binds:
-                    raise ValueError(f"Multiple internal states are bound to state {bind}")
+                    raise ValueError(
+                        f"Multiple internal states are bound to state {bind}"
+                    )
                 binds.add(bind)
 
         return values

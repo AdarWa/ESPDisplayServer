@@ -111,6 +111,7 @@ class InternalStateHandler:
                     )
                 await db.commit()
 
+
 @singleton
 class SyncInternalStateHandler:
     def __init__(self):

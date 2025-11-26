@@ -21,7 +21,9 @@ def test_states_to_stored_states_uses_defaults():
 def test_get_ha_bind_dict_filters_and_strips_prefix():
     states = [
         InternalState(
-            name="switch", definition=BooleanState(default=False), bind="ha:light.kitchen"
+            name="switch",
+            definition=BooleanState(default=False),
+            bind="ha:light.kitchen",
         ),
         InternalState(name="other", definition=BooleanState(default=True)),
     ]
