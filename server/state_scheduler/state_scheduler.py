@@ -82,9 +82,20 @@ class StateScheduler:
         assert act
         
         if act.script_name.startswith("ha:"):
-            pass
+            service_ = act.script_name.removeprefix("ha:").split(".")
+            if len(service_) != 2:
+                raise ValueError(f"Can't call {"".join(service_)} HA service; Invalid format!")
+            domain = service_[0]
+            service = service_[1]
+            kwrags = act.args or {}
+            
+            self.client.trigger_service_with_response(
+                domain,
+                service,
+                **kwrags
+            )
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("Currently, only HA scripts are supported")
         
     def _handle_on_callback(self, action: Action) -> None:
         act = action.on_callback
