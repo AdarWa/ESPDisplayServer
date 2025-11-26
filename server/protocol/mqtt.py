@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from typing import Any, Callable, Dict, Tuple
 
 import paho.mqtt.client as mqtt

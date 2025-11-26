@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from storage.session_manager import SessionManager
 from storage.storage_manager import Storage
 

@@ -76,39 +76,37 @@ class StateScheduler:
         if not action:
             raise KeyError(f"Action {action_id} not found")
         return action
-    
+
     def _handle_call_script(self, action: Action) -> None:
         act = action.call_script
         assert act
-        
+
         if act.script_name.startswith("ha:"):
             service_ = act.script_name.removeprefix("ha:").split(".")
             if len(service_) != 2:
-                raise ValueError(f"Can't call {"".join(service_)} HA service; Invalid format!")
+                raise ValueError(
+                    f"Can't call {''.join(service_)} HA service; Invalid format!"
+                )
             domain = service_[0]
             service = service_[1]
             kwrags = act.args or {}
-            
-            self.client.trigger_service_with_response(
-                domain,
-                service,
-                **kwrags
-            )
+
+            self.client.trigger_service_with_response(domain, service, **kwrags)
         else:
             raise NotImplementedError("Currently, only HA scripts are supported")
-        
+
     def _handle_on_callback(self, action: Action) -> None:
         act = action.on_callback
         assert act
-        
+
         actions = act.actions
         for _action in actions:
             self.call_action(_action)
-            
+
     def _handle_compare(self, action: Action) -> None:
         cmp = action.compare
         assert cmp
-        
+
         left_value = SyncInternalStateHandler().get(cmp.left)
         assert left_value
         left_value = left_value.value
@@ -127,20 +125,19 @@ class StateScheduler:
         else:
             if cmp.on_false:
                 self.call_action(cmp.on_false)
-    
+
     def _handle_update_state(self, action: Action) -> None:
         act = action.update_state
         assert act
-        
+
         target = act.target
         value = act.value
-            
+
         config = ConfigManager().get()
         state = config.internal_states.find_state_by_name(target)
         assert state
-            
-        SyncInternalStateHandler().set(state.to_stored_internal_state(value))
 
+        SyncInternalStateHandler().set(state.to_stored_internal_state(value))
 
     def call_action(self, action_id: ActionKey) -> None:
         action = self._find_action(action_id)

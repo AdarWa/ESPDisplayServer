@@ -1,6 +1,5 @@
 import asyncio
 
-import pytest
 
 from models.models import (
     BooleanState,

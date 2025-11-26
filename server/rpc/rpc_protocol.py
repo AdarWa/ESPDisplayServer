@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Any, Dict, Union, Optional
+from typing import Any, Union, Optional
 
 from rpc.rpc_models import (
     JSONRPCRequest,

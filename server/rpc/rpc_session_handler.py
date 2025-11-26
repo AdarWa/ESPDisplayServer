@@ -7,7 +7,7 @@ from protocol.mqtt import MQTT
 from rpc.rpc_protocol import make_request, make_response, make_error, deserialize
 from rpc.rpc_models import JSONRPCRequest, JSONRPCMessage
 from utils.utils import rpc_functions
-import rpc.rpc_methods as _
+import rpc.rpc_methods as _  # noqa: F401
 
 
 class RPCSessionHandler:

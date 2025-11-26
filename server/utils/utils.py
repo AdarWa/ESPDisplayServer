@@ -8,7 +8,7 @@ from models.models import InternalState, StoredInternalState
 def is_json(myjson):
     try:
         json.loads(myjson)
-    except ValueError as e:
+    except ValueError:
         return False
     return True
 
