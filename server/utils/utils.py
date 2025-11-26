@@ -1,5 +1,6 @@
 import json
 import asyncio
+from typing import Literal
 
 from models.models import InternalState, StoredInternalState
 
@@ -78,3 +79,17 @@ class AsyncLoopBase:
         self._stop.set()
         if self._task:
             await self._task
+
+def compare(a: float | int, b: float | int, op: Literal["eq", "ne", "lt", "gt", "le", "ge"]) -> bool:
+    if op == "eq":
+        return a==b
+    elif op == "ge":
+        return a>=b
+    elif op == "gt":
+        return a>b
+    elif op == "le":
+        return a<=b
+    elif op == "lt":
+        return a<b
+    elif op == "ne":
+        return a!=b

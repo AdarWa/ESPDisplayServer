@@ -4,7 +4,7 @@ from internal_states.internal_state_handler import InternalStateHandler
 from models.models import Action, InternalState, StoredInternalState
 from state_scheduler.ha_listener import AsyncWrapperHAListener
 from storage.config_manager import ConfigManager
-from utils.utils import set_value_by_string
+from utils.utils import compare, set_value_by_string
 import asyncio
 from typing import Callable
 
@@ -92,6 +92,26 @@ class StateScheduler:
                 self.call_action(_action)
         elif action.compare:
             cmp = action.compare
-            left_state_id = cmp.left
-            left_value = InternalStateHandler().get()
+            left_value = asyncio.run_coroutine_threadsafe(InternalStateHandler().get(cmp.left), asyncio.get_running_loop()).result()
+            assert left_value
+            left_value = left_value.value
+            op = cmp.operator
+            right_value = cmp.right
+            if isinstance(cmp.right, str):
+                right_value = asyncio.run_coroutine_threadsafe(InternalStateHandler().get(cmp.right), asyncio.get_running_loop()).result()
+                assert right_value
+                right_value = right_value.value
+            assert left_value
+            assert right_value
+            result = compare(float(left_value), float(right_value), op)
+            if result:
+                if cmp.on_true:
+                    self.call_action(cmp.on_true)
+            else:
+                if cmp.on_false:
+                    self.call_action(cmp.on_false)
+        elif action.update_state:
+            raise NotImplementedError()
+            
+            
                 
