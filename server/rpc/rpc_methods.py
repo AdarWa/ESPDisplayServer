@@ -1,5 +1,5 @@
 import asyncio
-from internal_states.internal_state_handler import InternalStateHandler
+from internal_states.internal_state_handler import InternalStateHandler, SyncInternalStateHandler
 from utils.utils import register_rpc, set_value_by_string
 from storage.config_manager import ConfigManager, ConfigError
 
@@ -28,6 +28,4 @@ def set_state(params, handler):
     value = params["value"]
     state = ConfigManager().get().internal_states.find_state_by_name(name)
     assert state
-    asyncio.get_running_loop().create_task(
-        InternalStateHandler().set(set_value_by_string(value, state))
-    )
+    SyncInternalStateHandler().set(set_value_by_string(value, state))

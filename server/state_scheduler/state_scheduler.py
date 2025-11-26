@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 from homeassistant_api import WebsocketClient
-from internal_states.internal_state_handler import InternalStateHandler
+from internal_states.internal_state_handler import InternalStateHandler, SyncInternalStateHandler
 from models.models import Action, InternalState, StoredInternalState
 from state_scheduler.ha_listener import AsyncWrapperHAListener
 from storage.config_manager import ConfigManager
@@ -43,11 +43,9 @@ class StateScheduler:
 
         config = ConfigManager().get()
 
-        asyncio.get_running_loop().create_task(
-            InternalStateHandler().bulk_set_if_not_exists(
+        SyncInternalStateHandler().bulk_set_if_not_exists(
                 states_to_stored_states(config.internal_states.states)
             )
-        )
 
         self.ha_listener = AsyncWrapperHAListener(self.client)
 
@@ -67,9 +65,7 @@ class StateScheduler:
     def handle_new_state(self, entity_id: str, new_state: str):
         internal_state = self._get_bound_state_by_entity_id(entity_id)
         assert internal_state
-        asyncio.get_running_loop().create_task(
-            InternalStateHandler().set(set_value_by_string(new_state, internal_state))
-        )
+        SyncInternalStateHandler().set(set_value_by_string(new_state, internal_state))
 
     def _get_all_actions(self) -> Dict[str, Action]:
         config = ConfigManager().get()
@@ -92,13 +88,13 @@ class StateScheduler:
                 self.call_action(_action)
         elif action.compare:
             cmp = action.compare
-            left_value = asyncio.run_coroutine_threadsafe(InternalStateHandler().get(cmp.left), asyncio.get_running_loop()).result()
+            left_value = SyncInternalStateHandler().get(cmp.left)
             assert left_value
             left_value = left_value.value
             op = cmp.operator
             right_value = cmp.right
             if isinstance(cmp.right, str):
-                right_value = asyncio.run_coroutine_threadsafe(InternalStateHandler().get(cmp.right), asyncio.get_running_loop()).result()
+                right_value = SyncInternalStateHandler().get(cmp.right)
                 assert right_value
                 right_value = right_value.value
             assert left_value

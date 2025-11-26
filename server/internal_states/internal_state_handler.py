@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Optional
 import aiosqlite
 from models.models import StoredInternalState
@@ -109,3 +110,41 @@ class InternalStateHandler:
                         (state.name, value),
                     )
                 await db.commit()
+
+@singleton
+class SyncInternalStateHandler:
+    def __init__(self):
+        self._async = InternalStateHandler()
+        self._loop = None
+
+    def _run(self, coro):
+        if self._loop is None:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+        return self._loop.run_until_complete(coro)
+
+    def set(self, state: StoredInternalState):
+        return self._run(self._async.set(state))
+
+    def get(self, name: str) -> Optional[StoredInternalState]:
+        return self._run(self._async.get(name))
+
+    def delete(self, key: str):
+        return self._run(self._async.delete(key))
+
+    def list_keys(self):
+        return self._run(self._async.list_keys())
+
+    def bulk_set(self, states: List[StoredInternalState]):
+        return self._run(self._async.bulk_set(states))
+
+    def set_if_not_exists(self, state: StoredInternalState):
+        return self._run(self._async.set_if_not_exists(state))
+
+    def bulk_set_if_not_exists(self, states: List[StoredInternalState]):
+        return self._run(self._async.bulk_set_if_not_exists(states))
+
+    def close(self):
+        if self._loop is not None:
+            self._loop.close()
+            self._loop = None
