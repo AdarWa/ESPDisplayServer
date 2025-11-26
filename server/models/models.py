@@ -128,8 +128,8 @@ class CompareAction(BaseModel):
     left: str
     operator: Literal["eq", "ne", "lt", "gt", "le", "ge"]
     right: Union[str, float, int]
-    on_true: Optional[Action] = None
-    on_false: Optional[Action] = None
+    on_true: Optional[str] = None
+    on_false: Optional[str] = None
 
 
 class ScriptCall(BaseModel):
@@ -188,43 +188,84 @@ class FullConfig(BaseModel):
 
     @model_validator(mode="before")
     def validate_references(cls, values):
-        states = values.get("internal_states", {}).get("states", [])
+        states = values.get("internal_states", {}) .get("states", [])
         state_names = {state["name"] for state in states}
-        actions = values.get("actions", {}).get("actions", [])
-        action_ids = {
-            action["id"] for action in actions
-        }
 
+        actions = values.get("actions", {}) .get("actions", [])
+        action_ids = {action["id"] for action in actions if "id" in action}
+        
+        def check_state(state: str):
+            return state in state_names or state.startswith("ha:")
+
+        # helper to validate an action (handles nested compare.on_true/on_false)
+        def check_action(action: dict):
+            action_id = action.get("id", "<unknown>")
+            sub_actions = [
+                action.get("on_callback"),
+                action.get("compare"),
+                action.get("call_script"),
+                action.get("update_state"),
+            ]
+            if sum(x is not None for x in sub_actions) != 1:
+                raise ValueError(
+                    f"Action '{action_id}' must define exactly one of on_callback, compare, call_script, update_state"
+                )
+
+            if action.get("update_state"):
+                target = action["update_state"].get("target")
+                if not check_state(target):
+                    raise ValueError(
+                        f"Action '{action_id}' update_state target '{target}' references unknown internal state '{target}'"
+                    )
+
+            if action.get("compare"):
+                left = action["compare"].get("left")
+                right = action["compare"].get("right")
+                if left not in state_names:
+                    raise ValueError(
+                        f"Action '{action_id}' compare left '{left}' references unknown internal state '{left}'"
+                    )
+                if isinstance(right, str) and right not in state_names:
+                    raise ValueError(
+                        f"Action '{action_id}' compare right '{right}' references unknown internal state '{right}'"
+                    )
+
+            if action.get("on_callback"):
+                for act_id in action["on_callback"].get("actions", []):
+                    if act_id not in action_ids:
+                        raise ValueError(
+                            f"OnCallback in action '{action_id}' references unknown action id '{act_id}'"
+                        )
+
+        # validate screens reference existing states
         for screen in values.get("screens", []):
             for bound_state in screen.get("state_bindings", {}).values():
                 if bound_state not in state_names:
                     raise ValueError(
-                        f"Screen '{screen['id']}' binds to unknown internal state '{bound_state}'"
+                        f"Screen '{screen.get('id')}' binds to unknown internal state '{bound_state}'"
                     )
 
+        # validate actions and their referenced states
         for action in actions:
-            if action.get("on_callback"):
-                for act_id in action.get("on_callback", {}).get("actions", []):
-                    if act_id not in action_ids:
-                        raise ValueError(
-                            f"OnCallback in action '{action['id']}' references unknown action id '{act_id}'"
-                        )
-            # if sum([action.("on_callback")])
-            sub_actions = [action.get("on_callback"), action.get("compare"), action.get("call_script"), action.get("update_state")]
-            if sum(x is not None for x in sub_actions) != 1:
-                raise ValueError(f"No action definition found for {action.get("id")}")
-            
+            check_action(action)
+
+        # validate modules reference existing states (e.g., timer.time_state)
+        for module in values.get("modules", []):
+            timer = (module or {}).get("timer") or {}
+            time_state = timer.get("time_state")
+            if time_state and time_state not in state_names:
+                raise ValueError(
+                    f"Module '{module.get('id')}' references unknown time_state '{time_state}'"
+                )
+
+        # ensure no duplicate external binds among internal states
         binds = set()
         for state in states:
             bind = state.get("bind")
             if bind:
-                len_before = len(binds)
+                if bind in binds:
+                    raise ValueError(f"Multiple internal states are bound to state {bind}")
                 binds.add(bind)
-                if len(binds) == len_before:
-                    raise ValueError(
-                        f"Multiple internal states are bound to state {bind}"
-                    )
-                    
 
         return values
 

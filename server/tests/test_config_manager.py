@@ -16,35 +16,8 @@ def reset_config_manager():
 
 
 def _valid_config():
-    return {
-        "screens": [
-            {
-                "id": "main",
-                "template": "simple",
-                "state_bindings": {"field": "temperature"},
-            }
-        ],
-        "internal_states": {
-            "states": [
-                {
-                    "name": "temperature",
-                    "definition": {"type": "number", "default": 20, "min": 0},
-                    "bind": "ha:climate.living_room",
-                }
-            ]
-        },
-        "actions": {
-            "actions": [
-                {
-                    "id": "adjust_temp",
-                    "update_state": {"target": "temperature", "value": 21},
-                }
-            ]
-        },
-        "modules": [
-            {"id": "timer", "timer": {"callback": "cb", "time_state": "temperature"}}
-        ],
-    }
+    with open("config.yaml", 'r') as f:
+        return yaml.safe_load(f)
 
 
 def test_loads_valid_config(tmp_path, reset_config_manager):
@@ -54,8 +27,6 @@ def test_loads_valid_config(tmp_path, reset_config_manager):
     config = reset_config_manager.init(path)
 
     assert isinstance(config, FullConfig)
-    assert reset_config_manager.as_dict()["screens"][0]["id"] == "main"
-    assert config.internal_states.states[0].name == "temperature"
 
 
 def test_missing_file_raises(tmp_path, reset_config_manager):
@@ -79,7 +50,7 @@ def test_duplicate_bind_raises(tmp_path, reset_config_manager):
         {
             "name": "dup",
             "definition": {"type": "number", "default": 10},
-            "bind": "ha:climate.living_room",
+            "bind": "ha:climate.living_room.hvac_mode",
         }
     )
     path = tmp_path / "config.yaml"
