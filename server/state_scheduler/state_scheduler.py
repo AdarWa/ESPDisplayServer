@@ -1,14 +1,12 @@
 from typing import Dict, List, Optional
 from homeassistant_api import WebsocketClient
 from internal_states.internal_state_handler import (
-    InternalStateHandler,
     SyncInternalStateHandler,
 )
 from models.models import Action, InternalState, StoredInternalState
 from state_scheduler.ha_listener import AsyncWrapperHAListener
 from storage.config_manager import ConfigManager
 from utils.utils import compare, set_value_by_string
-import asyncio
 from typing import Callable
 
 type TriggerCallback = Callable[[str, str], None]
@@ -78,34 +76,68 @@ class StateScheduler:
         if not action:
             raise KeyError(f"Action {action_id} not found")
         return action
+    
+    def _handle_call_script(self, action: Action) -> None:
+        act = action.call_script
+        assert act
+        
+        if act.script_name.startswith("ha:"):
+            pass
+        else:
+            raise NotImplementedError()
+        
+    def _handle_on_callback(self, action: Action) -> None:
+        act = action.on_callback
+        assert act
+        
+        actions = act.actions
+        for _action in actions:
+            self.call_action(_action)
+            
+    def _handle_compare(self, action: Action) -> None:
+        cmp = action.compare
+        assert cmp
+        
+        left_value = SyncInternalStateHandler().get(cmp.left)
+        assert left_value
+        left_value = left_value.value
+        op = cmp.operator
+        right_value = cmp.right
+        if isinstance(cmp.right, str):
+            right_value = SyncInternalStateHandler().get(cmp.right)
+            assert right_value
+            right_value = right_value.value
+        assert left_value
+        assert right_value
+        result = compare(float(left_value), float(right_value), op)
+        if result:
+            if cmp.on_true:
+                self.call_action(cmp.on_true)
+        else:
+            if cmp.on_false:
+                self.call_action(cmp.on_false)
+    
+    def _handle_update_state(self, action: Action) -> None:
+        act = action.update_state
+        assert act
+        
+        target = act.target
+        value = act.value
+            
+        config = ConfigManager().get()
+        state = config.internal_states.find_state_by_name(target)
+        assert state
+            
+        SyncInternalStateHandler().set(state.to_stored_internal_state(value))
 
-    def call_action(self, action_id: ActionKey):
+
+    def call_action(self, action_id: ActionKey) -> None:
         action = self._find_action(action_id)
         if action.call_script:
-            raise NotImplementedError()
+            self._handle_call_script(action)
         elif action.on_callback:
-            actions = action.on_callback.actions
-            for _action in actions:
-                self.call_action(_action)
+            self._handle_on_callback(action)
         elif action.compare:
-            cmp = action.compare
-            left_value = SyncInternalStateHandler().get(cmp.left)
-            assert left_value
-            left_value = left_value.value
-            op = cmp.operator
-            right_value = cmp.right
-            if isinstance(cmp.right, str):
-                right_value = SyncInternalStateHandler().get(cmp.right)
-                assert right_value
-                right_value = right_value.value
-            assert left_value
-            assert right_value
-            result = compare(float(left_value), float(right_value), op)
-            if result:
-                if cmp.on_true:
-                    self.call_action(cmp.on_true)
-            else:
-                if cmp.on_false:
-                    self.call_action(cmp.on_false)
+            self._handle_compare(action)
         elif action.update_state:
-            raise NotImplementedError()
+            self._handle_update_state(action)
